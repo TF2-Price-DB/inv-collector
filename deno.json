@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "download-inventories": "deno run --env-file=.env --allow-env=EXPRESS_LOAD_API_KEY --allow-net --allow-read=data/ --allow-write=data/ bin/download-inventories.ts"
+  }
+}
