@@ -5,7 +5,7 @@ _Sometimes, you just need a lot of inventory data for your next project._
 ## Sources
 
 The accounts I chose to download came from the BackpackTF top inventories list.
-[The script](./bin/find-top-inventories-from-backpack.browser) I used to has
+[The script](./bin/find-top-inventories-from-backpack.browser.ts) I used to has
 been checked in to this repository. The inventories were downloaded from
 express-load.com. I happen to have some credits there.
 
