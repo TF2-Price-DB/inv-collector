@@ -1,2 +1,2 @@
-data/
+data/inventories/*.json
 .env
