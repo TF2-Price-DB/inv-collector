@@ -1,5 +1,8 @@
 {
   "tasks": {
-    "download-inventories": "deno run --env-file=.env --allow-env=EXPRESS_LOAD_API_KEY --allow-net --allow-read=data/ --allow-write=data/ bin/download-inventories.ts"
+    "download-inventories": "deno run --env-file=.env --allow-env='INV_COLLECTOR*' --allow-net --allow-read=data/ --allow-write=data/ bin/download-inventories.ts"
+  },
+  "imports": {
+    "@deno.land/sqlite": "https://deno.land/x/sqlite@v3.9.1/mod.ts"
   }
 }
