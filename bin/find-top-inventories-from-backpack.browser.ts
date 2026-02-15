@@ -8,17 +8,17 @@
 
   // Settings;
   const START = 1;
-  const END = 100;
+  const END = 200;
 
   const BASE = "https://backpack.tf/top/backpacks/";
   const ids = [];
 
   for (let p = START; p <= END; p++) {
-    console.log(`Fetching page ${p} …`);
+    console.log(`Fetching page ${p} ...`);
     try {
       const res = await fetch(BASE + p);
       if (!res.ok) {
-        console.warn(`  HTTP ${res.status} – skipped`);
+        console.warn(`  HTTP ${res.status} - skipped`);
         continue;
       }
       const html = await res.text();
