@@ -10,7 +10,7 @@ assignees: lexidor
 ## Required information
  - Steam64: `76...`
 
-- [ ] I declare I am submitting this issue for my own account or on behalf of someone else who requested me to file this issue.
+- [ ] I declare I am submitting this issue for my own account or; for the account owned by someone else who requested me to submit this issue on their behalf.
 
 ### Additional Reading
 
