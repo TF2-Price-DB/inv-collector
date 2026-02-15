@@ -1,2 +1,4 @@
 data/inventories/*.json
+data/inventory-load-failures/*.jsonl
+data/sqlite3.db
 .env

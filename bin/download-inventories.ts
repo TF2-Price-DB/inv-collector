@@ -1,10 +1,9 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-import * as process from "node:process";
-import { getInventoryFiles } from "../src/getInventoryFiles.ts";
-import { createInventoryFiles } from "../src/createInventoryFiles.ts";
 import { TOP_INVENTORIES } from "../src/TOP_INVENTORIES.ts";
 import { AsyncSemaphore } from "../src/AsyncSemaphore.ts";
+import { FileSystemStorage } from "../src/storage/FileSystemStorage.ts";
+import { DenoSqliteStorage } from "../src/storage/DenoSqliteStorage.ts";
+import { readEnv } from "../src/readEnv.ts";
+import { Failure } from "../src/storage/StorageEngine.ts";
 
 if (!import.meta.main) {
   throw new Error(
@@ -12,44 +11,87 @@ if (!import.meta.main) {
   );
 }
 
-const semaphore = new AsyncSemaphore(3);
+const config = {
+  apiKey: readEnv("EXPRESS_LOAD_API_KEY"),
+  storageEngine: readEnv("STORAGE_ENGINE"),
+  concurrency: readEnv("CONCURRENCY", true),
+  retryCount: readEnv("RETRY_COUNT", true),
+  failureAgeDays: readEnv("RETRY_DAYS", true),
+};
 
-const expressLoadApiKeyMaybeNull = process.env.EXPRESS_LOAD_API_KEY;
-if (expressLoadApiKeyMaybeNull == null) {
-  throw new Error("No express load api key configured.");
+console.log("%cSettings:", "color: yellow");
+console.log("%c" + JSON.stringify(config, null, 2), "color: cyan");
+
+const expressLoadApiKey = config.apiKey;
+const semaphore = new AsyncSemaphore(config.concurrency);
+const errorBoundary = new Date(
+  new Date().valueOf() - (config.failureAgeDays * 24 * 60 * 60 * 1000),
+);
+
+const storage = await (() => {
+  switch (config.storageEngine) {
+    case "json-fs":
+      return FileSystemStorage.try();
+    case "deno-sqlite":
+      return DenoSqliteStorage.try();
+    default:
+      return null;
+  }
+})();
+
+if (!storage) {
+  throw new Error(
+    `Could not load the storage engine: ${config.storageEngine}`,
+  );
 }
-const expressLoadApiKey = expressLoadApiKeyMaybeNull;
 
-await createInventoryFiles(TOP_INVENTORIES);
-const files = await getInventoryFiles();
+let downloadsDone = 0;
+let downloadsFailed = 0;
 
-await Promise.allSettled(files.map(async ([name, fullPath]) => {
+await Promise.allSettled(TOP_INVENTORIES.map(async (steam64) => {
   try {
     await semaphore.with(async () => {
-      const stat = await fs.stat(fullPath);
-      if (stat.size !== 0) {
+      if (await storage.hasInventory(steam64)) {
         return;
       }
 
-      const steam64 = path.basename(name, path.extname(name));
+      const relevantFailures = (await storage.loadFailures(steam64))
+        .filter((x) => x.at > errorBoundary);
+      if (
+        relevantFailures.length > config.retryCount ||
+        relevantFailures.some((x) => !isRetryable(x))
+      ) {
+        return;
+      }
+
       const res = await download(steam64);
       if (!res.ok) {
-        throw res;
+        throw new Error(res.statusText, { cause: res.status });
       }
 
       const text = await res.text();
-      console.log(`Finished: ${steam64}`);
+      console.log(`%cOK(${++downloadsDone}): ${steam64}`, "color: green");
 
       // Does it parse?
       void JSON.parse(text);
 
-      fs.writeFile(fullPath, text);
+      storage.storeInventory(steam64, text);
     });
   } catch (e) {
-    console.error(`Error: ${fullPath}`);
-    console.error(e);
+    const err = e as Error;
+    const cause = err.cause;
+    console.error(
+      `%cERR(${++downloadsFailed}): ${steam64} ${err.message}`,
+      "color: red",
+    );
+
+    await storage.storeFailure(steam64, typeof cause === "number" ? cause : 0);
+
+    if (cause === 429) {
+      await enhanceYourChill();
+    }
   }
-}));
+})).finally(() => storage.close());
 
 async function download(steam64: string) {
   const headers = new Headers([["X-API-KEY", expressLoadApiKey]]);
@@ -57,4 +99,16 @@ async function download(steam64: string) {
     `https://api.express-load.com/inventory/${steam64}/440/2`,
     { headers },
   );
+}
+
+function enhanceYourChill() {
+  console.error(
+    "%cConcurrency too high, forcefully slowing down...",
+    "color: cyan",
+  );
+  return new Promise((res) => setTimeout(res, 30_000));
+}
+
+function isRetryable(failure: Failure) {
+  return failure.statusCode !== 403;
 }
