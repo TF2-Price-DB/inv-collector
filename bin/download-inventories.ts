@@ -4,6 +4,8 @@ import { FileSystemStorage } from "../src/storage/FileSystemStorage.ts";
 import { DenoSqliteStorage } from "../src/storage/DenoSqliteStorage.ts";
 import { readEnv } from "../src/readEnv.ts";
 import { Failure } from "../src/storage/StorageEngine.ts";
+import { GLADIATOR_BOTS } from "../src/GLADIATOR_BOTS.ts";
+import { GLADIATOR_USERS } from "../src/GLADIATOR_USERS.ts";
 
 if (!import.meta.main) {
   throw new Error(
@@ -48,7 +50,13 @@ if (!storage) {
 let downloadsDone = 0;
 let downloadsFailed = 0;
 
-await Promise.allSettled(TOP_INVENTORIES.map(async (steam64) => {
+const steam64s = [...new Set([
+  ...TOP_INVENTORIES,
+  ...GLADIATOR_BOTS,
+  ...GLADIATOR_USERS,
+])];
+
+await Promise.allSettled(steam64s.map(async (steam64) => {
   try {
     await semaphore.with(async () => {
       if (await storage.hasInventory(steam64)) {
