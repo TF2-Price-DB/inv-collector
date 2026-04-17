@@ -15,17 +15,17 @@ credits there. The requests made by express-load are made to:
 I have only downloaded inventory data that was accessible publicly. If your
 inventory is Friends Only or Private, I have not downloaded it. I will suggest,
 but not require, that you make your inventory private. You may create an issue
-on this repository requesting your data be removed from the database. WIthin 28
+on this repository requesting your data be removed from the database. Within 28
 days of your issue, I will overwrite your inventory with the default empty
 inventory response.
 
 ## Getting the data
 
-I cannot check in the 48,864,534,528 bytes (50GB) of inventory data I have
+I cannot check in the 49,365,327,872 bytes (50GB) of inventory data I have
 collected. Github does not let me. I have compiled a SQLite database and
 uploaded a compressed version of this file to store.pricedb.io. You can download
 this, free of charge. You can decompress it with `brotli`, the command line
-tool. At the time of writing, the uncompressed database contains 39,755
+tool. At the time of writing, the uncompressed database contains 39,410
 inventories. Some are of the rich and famous, as per the
 [Top Backpacks on BPTF](https://backpack.tf/top/backpacks). Others are bots and
 users of [Gladiator.TF](https://gladiator.tf). Thanks to the top folks over
@@ -34,7 +34,7 @@ there at Gladiator for sharing their active user list.
 How to obtain a copy of the database:
 
 ```SH
-curl https://store.pricedb.io/inventories-2026-02-22.sqlite3.db.br -o inv.db.br
+curl https://store.pricedb.io/inventories-2026-04-17.sqlite3.db.br -o inv.db.br
 brotli -d --rm inv.db.br
 sqlite3 inv.db
 
@@ -50,7 +50,7 @@ CREATE INDEX idx_inventory_load_failures_steam64
        ON inventory_load_failures(steam64);
 ```
 
-If you want to download new data, instead of using data from February 2026. You
+If you want to download new data, instead of using data from April 2026. You
 can run `deno task download-inventories`. You will have to supply your own
 EXPRESS_LOAD_API_KEY in .env. You can change the concurrency of the downloader
 at your option. The current value did not result in rate limits.
